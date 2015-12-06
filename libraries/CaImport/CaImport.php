@@ -14,15 +14,23 @@ class Newspapers_CaImport_CaImport extends Omeka_Job_AbstractJob
         
         $firstNp = $newspapers['newspapers'][0];
         
-        $this->parseNewspaperData($firstNp);
+        $newspaper = $this->parseNewspaperData($firstNp);
         
         
         
         $firstNpUrl = $firstNp['url'];
-        $data = $this->fetchData($firstNpUrl);
-        echo '<pre>';
-        //print_r($data);
-        echo '</pre>';
+        $firstNpData = $this->fetchData($firstNpUrl);
+        
+        
+        $issueUrl = $firstNpData['issues'][0]['url'];
+        $issueJson = $this->fetchData($issueUrl);
+        
+        
+        $this->parseIssueData($issueJson, $newspaper);
+        //$frontPageData = $this->fetchData($firstIssueData['pages'][0]['url']);
+        
+        
+        //$this->parseFrontPageData($issueJson);
     }
     
     protected function fetchData($url)
@@ -30,6 +38,68 @@ class Newspapers_CaImport_CaImport extends Omeka_Job_AbstractJob
         $this->client->setUri($url);
         $response = $this->client->request();
         return json_decode($response->getBody(), true);
+    }
+    
+    protected function parseIssueData($issueJson, $newspaper)
+    {
+        $issue = new NewspapersIssue();
+        $issue->loc_uri = $issueJson['url'];
+        $issue->pages = count($issueJson['pages']);
+        $issue->newspaper_id = $newspaper->id;
+        $issue->date_issued = $issueJson['date_issued'];
+        $issue->save();
+        
+        $this->parseFrontPageData($issueJson, $issue);
+    }
+    
+    protected function parseFrontPageData($issueJson, $issue)
+    {
+        $frontpage = new NewspapersFrontPage();
+        
+        $itemElementMetadata = array('Dublin Core' => array(), 'Newspaper Metadata' => array());
+        $itemMetadata = array('collection' => 1, 'public' => true); //fake @todo
+        
+        $frontpageJson = $this->fetchData($issueJson['pages'][0]['url']);
+        $altoUrl = $frontpageJson['ocr'];
+        $pdfUrl = $frontpageJson['pdf'];
+        $date = $frontpageJson['issue']['date_issued'];
+        $title = $issueJson['title']['name'] . ' ' . $date;
+        $itemElementMetadata['Dublin Core']['Title'] = array(array('text' => $title, 'html' => false));
+        $itemElementMetadata['Dublin Core']['Date'] = array(array('text' => $date, 'html' => false));
+        
+        $filesMetadata = array('file_transfer_type' => 'Url', 'files' => $altoUrl);
+        
+        $item = insert_item($itemMetadata, $itemElementMetadata, $filesMetadata);
+        
+        echo "<pre>";
+        echo 'fp url ' .  $issueJson['pages'][0]['url'];
+        print_r($issueJson);
+        echo "</pre>";
+        
+        
+        $altoDoc = new AltoDoc($altoUrl);
+        
+        
+        $bottomTls = $altoDoc->filterTlsByVpos(null, .5);
+        $tls = $altoDoc->filterTlsByHeightSd($bottomTls, 1.1);
+    
+        $tls = $altoDoc->filterTlsByWidthSd($tls);
+        $columnsGuess = $altoDoc->guessColumnsFromTls($tls, .7, null, 1.12);
+        
+        $frontpage->columns = $columnsGuess;
+        $frontpage->item_id = $item->id;
+        $frontpage->issue_id = 1; //fake @todo
+        $frontpage->ca_import_id = 1; //fake @todo
+        $frontpage->page_height = $altoDoc->pageLayout['page']['height'];
+        $frontpage->page_width = $altoDoc->pageLayout['page']['width'];
+        $frontpage->printspace_height = $altoDoc->pageLayout['printSpace']['height'];
+        $frontpage->printspace_width = $altoDoc->pageLayout['printSpace']['width'];
+        $frontpage->printspace_vpos = $altoDoc->pageLayout['printSpace']['hpos'];
+        $frontpage->printspace_hpos = $altoDoc->pageLayout['printSpace']['hpos'];
+        $frontpage->loc_uri = $issueJson['pages'][0]['url'];
+        $frontpage->pdf_url = $pdfUrl;
+        
+        $frontpage->save();
     }
     
     protected function parseNewspaperData($newspaperJson)
@@ -47,6 +117,9 @@ class Newspapers_CaImport_CaImport extends Omeka_Job_AbstractJob
             switch($key) {
                 case 'place_of_publication':
                 case 'lccn':
+                    $metadata['Dublin Core']['Identifier'] = array(
+                        array('html' => false, 'text' => $values)
+                    );
                 case 'start_year':
                 case 'end_year':
                 case 'url':
@@ -97,13 +170,13 @@ class Newspapers_CaImport_CaImport extends Omeka_Job_AbstractJob
         //set NewspapersNewspaper data
         $newspaper = new NewspapersNewspaper();
         //$newspaper->collection_id = $collection->id;
-        $newspaper->collection_id = 1; // fake!
-        $newspaper->ca_import_id = 1; //fake!
+        $newspaper->collection_id = 1; // fake! @todo
+        $newspaper->ca_import_id = 1; //fake! @todo
         $newspaper->lccn = $newspaperJson['lccn'];
         $newspaper->state = $newspaperJson['state'];
         $newspaper->issues_count = count($newspaperDetailsJson['issues']);
         $newspaper->save();
-        
+        return $newspaper;
     }
     
     

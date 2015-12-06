@@ -30,6 +30,8 @@ class NewspapersPlugin extends Omeka_Plugin_AbstractPlugin
                 array('name' => 'end_year'),
                 array('name' => 'url'),
                 array('name' => 'place'),
+                array('name' => 'columns'),
+                array('name' => 'state'),
                 );
         
         insert_element_set($elSetData, $elementsData);

@@ -232,13 +232,13 @@ class AltoDoc
 
         $maxLikelyWidthByTls = $maxLikelyWidthByTls * $widthsTweak;
         $rawColumnsGuess = $this->pageLayout['printSpace']['width'] / $maxLikelyWidthByTls;
-        echo $rawColumnsGuess . PHP_EOL;
         $columnsByTls = floor($this->pageLayout['page']['width'] / $maxLikelyWidthByTls);
         
+        //is there sometimes a difference btw page and printSpace dimensions?
         return floor($this->pageLayout['page']['width'] / $maxLikelyWidthByTls);
         //return floor($this->pageLayout['page']['width'] / $minLikelyWidthByTls);
-        return ceil($this->pageLayout['printSpace']['width'] / $maxLikelyWidthByTls);
-        return floor($this->pageLayout['printSpace']['width'] / $maxLikelyWidthByTbs);
+        //return ceil($this->pageLayout['printSpace']['width'] / $maxLikelyWidthByTls);
+        //return floor($this->pageLayout['printSpace']['width'] / $maxLikelyWidthByTbs);
         
     }
 
