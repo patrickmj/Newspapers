@@ -4,8 +4,6 @@ class NewspapersFrontPage extends Omeka_Record_AbstractRecord
 {
     public $item_id;
     
-    public $ca_import_id;
-    
     public $issue_id;
     
     public $loc_uri;

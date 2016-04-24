@@ -12,29 +12,30 @@ class Newspapers_CaImport_CaImport extends Omeka_Job_AbstractJob
         $newspapersUrl = 'http://chroniclingamerica.loc.gov/newspapers.json';
         $newspapers = $this->fetchData($newspapersUrl);
         
-        $firstNp = $newspapers['newspapers'][0];
-        
-        $newspaper = $this->parseNewspaperData($firstNp);
-        
-        
-        
-        $firstNpUrl = $firstNp['url'];
-        $firstNpData = $this->fetchData($firstNpUrl);
-        
-        
-        $issueUrl = $firstNpData['issues'][0]['url'];
-        $issueJson = $this->fetchData($issueUrl);
-        
-        
-        $this->parseIssueData($issueJson, $newspaper);
-        //$frontPageData = $this->fetchData($firstIssueData['pages'][0]['url']);
-        
-        
-        //$this->parseFrontPageData($issueJson);
+        foreach($newspapers['newspapers'] as $index => $newspaperData) {
+            
+        //for testing grab every $whatever interval
+            if ($index %1000 != 0 ) {
+                continue;
+            }
+            $newspaper = $this->parseNewspaperData($newspaperData);
+            $newspaperUrl = $newspaperData['url'];
+            $deepNpData = $this->fetchData($newspaperUrl);
+            $issuesData = $deepNpData['issues'];
+            foreach($issuesData as $issueData) {
+                $issueUrl = $issueData['url'];
+                $issueJson = $this->fetchData($issueUrl);
+            
+                $issue = $this->parseIssueData($issueJson, $newspaper);
+                $frontPage = $this->parseFrontPageData($issueJson, $issue, $newspaper);
+            }
+            
+        }
     }
     
     protected function fetchData($url)
     {
+        usleep(50);
         $this->client->setUri($url);
         $response = $this->client->request();
         return json_decode($response->getBody(), true);
@@ -48,16 +49,20 @@ class Newspapers_CaImport_CaImport extends Omeka_Job_AbstractJob
         $issue->newspaper_id = $newspaper->id;
         $issue->date_issued = $issueJson['date_issued'];
         $issue->save();
+        return $issue;
         
-        $this->parseFrontPageData($issueJson, $issue);
     }
     
-    protected function parseFrontPageData($issueJson, $issue)
+    protected function parseFrontPageData($issueJson, $issue, $newspaper)
     {
+        //I've have not idea why this is needed
+        if (! class_exists('Alto2Svg')) {
+            include(BASE_DIR . '/plugins/Newspapers/libraries/alto2svg/Alto2Svg.php');
+        }
         $frontpage = new NewspapersFrontPage();
         
         $itemElementMetadata = array('Dublin Core' => array(), 'Newspaper Metadata' => array());
-        $itemMetadata = array('collection' => 1, 'public' => true); //fake @todo
+        $itemMetadata = array('collection_id' => $newspaper->collection_id, 'public' => true); //fake @todo
         
         $frontpageJson = $this->fetchData($issueJson['pages'][0]['url']);
         $altoUrl = $frontpageJson['ocr'];
@@ -67,28 +72,44 @@ class Newspapers_CaImport_CaImport extends Omeka_Job_AbstractJob
         $itemElementMetadata['Dublin Core']['Title'] = array(array('text' => $title, 'html' => false));
         $itemElementMetadata['Dublin Core']['Date'] = array(array('text' => $date, 'html' => false));
         
-        $filesMetadata = array('file_transfer_type' => 'Url', 'files' => $altoUrl);
-        
+        $filesMetadata = array('file_transfer_type' => 'Url', 'files' => $altoUrl, 'file_ingest_options' => array());
         $item = insert_item($itemMetadata, $itemElementMetadata, $filesMetadata);
-        
-        echo "<pre>";
-        echo 'fp url ' .  $issueJson['pages'][0]['url'];
-        print_r($issueJson);
-        echo "</pre>";
-        
-        
+        //@TODO to handle alto2svg conversion, a new Omeka_File_Ingest_AbstractIngest implementation?
+        //or just do db churn and processing here?
         $altoDoc = new AltoDoc($altoUrl);
         
+        $alto2svg = new Alto2Svg($altoDoc->alto);
+        $svg = $alto2svg->process();
+        $tempSvgPath = tempnam(sys_get_temp_dir(), 'omeka_plugin_newspapers_');
+        $handle = fopen($tempSvgPath, "w");
+        fwrite($handle, $svg);
+        fclose($handle);
+        chmod($tempSvgPath, 777);
+        debug('tempsvgpath ' . $tempSvgPath);
         
+        
+        $builder = new Builder_Item(get_db());
+        $builder->setRecord($item);
+        $builder->addFiles('Filesystem', $tempSvgPath);
+        
+        
+        unlink($tempSvgPath);
+        
+        
+//begin voodoo
         $bottomTls = $altoDoc->filterTlsByVpos(null, .5);
         $tls = $altoDoc->filterTlsByHeightSd($bottomTls, 1.1);
-    
         $tls = $altoDoc->filterTlsByWidthSd($tls);
         $columnsGuess = $altoDoc->guessColumnsFromTls($tls, .7, null, 1.12);
+//end voodoo
+        
+        
+        
+        
         
         $frontpage->columns = $columnsGuess;
         $frontpage->item_id = $item->id;
-        $frontpage->issue_id = 1; //fake @todo
+        $frontpage->issue_id = $issue->id;
         $frontpage->ca_import_id = 1; //fake @todo
         $frontpage->page_height = $altoDoc->pageLayout['page']['height'];
         $frontpage->page_width = $altoDoc->pageLayout['page']['width'];
@@ -106,6 +127,7 @@ class Newspapers_CaImport_CaImport extends Omeka_Job_AbstractJob
     {
         //$newspaperJson comes from entry from newspapers.json
         //fetch second layer of data
+        
         $newspaperDetailsJson = $this->fetchData($newspaperJson['url']);
         //set element set data
         //need an element set for Newspaper
@@ -170,7 +192,7 @@ class Newspapers_CaImport_CaImport extends Omeka_Job_AbstractJob
         //set NewspapersNewspaper data
         $newspaper = new NewspapersNewspaper();
         //$newspaper->collection_id = $collection->id;
-        $newspaper->collection_id = 1; // fake! @todo
+        $newspaper->collection_id = $collection->id;
         $newspaper->ca_import_id = 1; //fake! @todo
         $newspaper->lccn = $newspaperJson['lccn'];
         $newspaper->state = $newspaperJson['state'];

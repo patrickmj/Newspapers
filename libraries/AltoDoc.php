@@ -207,7 +207,6 @@ class AltoDoc
         //and do something
         
         
-        echo $this->pageLayout['page']['width'] . ' ' . $maxLikelyWidthByTbs . ' ' . $this->pageLayout['page']['width'] / $maxLikelyWidthByTbs .  PHP_EOL;
         return $columnsByTbs;
     }
     
@@ -272,7 +271,6 @@ class AltoDoc
 
         foreach($tbNodes as $tbNode) {
             $tbId = $tbNode->getAttribute('ID');
-            //echo $tbId;
             $tlNodes = $this->getTextLines();
             $tlsByTbs[$tbId] = $tlNodes->length;
         }
