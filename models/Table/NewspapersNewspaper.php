@@ -9,10 +9,22 @@ class Table_NewspapersNewspaper extends Omeka_Db_Table
         return $this->fetchObject($select);
     }
     
-    public function getStats($newspaperId = null)
+    public function getStats($params = array())
     {
-        $select = $this->getSelect();
+        $newspaperIds = array();
+        $states = array();
         
+        if ( isset($params['newspaperIds']) && is_array($params['newspaperIds'])) {
+            $newspaperIds = $params['newspaperIds'];
+        }
+        
+        
+        if ( isset($params['states']) && is_array($params['states'])) {
+            $states = $params['states'];
+        }
+        
+        $select = $this->getSelect();
+        $newspaperId = 1;
         
         $db = $this->_db;
         $select->from($db->NewspapersNewspaper,
@@ -84,7 +96,8 @@ class Table_NewspapersNewspaper extends Omeka_Db_Table
         $select->join($db->NewspapersFrontPage, 
                 "{$db->NewspapersFrontPage}.issue_id = {$db->NewspapersIssue}.id", array());
         
-        $select->where("{$db->NewspapersNewspaper}.state IN (?)", array('Alabama'));
+        $select->where("{$db->NewspapersNewspaper}.state IN (?)", $states);
+        $select->where("{$db->NewspapersNewspaper}.id IN (?)", $newspaperIds);
         
 echo $select;
 $result = $this->_db->fetchAll($select);
