@@ -60,7 +60,7 @@ class NewspapersFrontPage extends Omeka_Record_AbstractRecord
         for($col = 0; $col < $this->columns; $col++) {
             $x = $normalizedWidth * $col;
             $svg .= "
-            <use xlink:href='#column' x='$x' transform='scale($colWidthScale, .9)'></use>
+            <use xlink:href='#column' x='$x' transform='scale($colWidthScale, .95)'></use>
             ";
         }
         
