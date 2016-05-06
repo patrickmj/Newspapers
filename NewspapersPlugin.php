@@ -1,5 +1,7 @@
 <?php
 
+define('NEWSPAPERS_PLUGIN_DIR', PLUGIN_DIR . '/Newspapers');
+
 class NewspapersPlugin extends Omeka_Plugin_AbstractPlugin
 {
     public $_hooks = array(

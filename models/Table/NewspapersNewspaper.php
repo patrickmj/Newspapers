@@ -9,6 +9,14 @@ class Table_NewspapersNewspaper extends Omeka_Db_Table
         return $this->fetchObject($select);
     }
     
+    /**
+     * 
+     * @param unknown_type $params
+     * newspaperIds
+     * states
+     * 
+     */
+    
     public function getStats($params = array())
     {
         $newspaperIds = array();
