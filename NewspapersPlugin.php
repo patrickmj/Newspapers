@@ -8,7 +8,8 @@ class NewspapersPlugin extends Omeka_Plugin_AbstractPlugin
             'install',
             'uninstall',
             'initialize',
-            'public_head'
+            'public_head',
+            'items_browse_sql'
             );
     
     public $_filters = array(
@@ -89,6 +90,40 @@ class NewspapersPlugin extends Omeka_Plugin_AbstractPlugin
     public function hookPublicHead($args)
     {
         queue_css_file('sotn');
+    }
+    
+    public function hookItemsBrowseSql($args)
+    {
+        $select = $args['select'];
+        $params = $args['params'];
+        
+        $db = $this->_db;
+
+        $select->join($db->NewspapersFrontPage,
+            "{$db->NewspapersFrontPage}.item_id = items.id", array());
+        
+        if(isset($params['columns'])) {
+            $select->where("{$db->NewspapersFrontPage}.columns = ? ", $params['columns']);
+        }
+        
+        if(isset($params['state'])) {
+            $select->join($db->NewspapersIssues,
+                "{$db->NewspapersFrontPage}.issue_id = {$db->NewspapersIssue}.id", array());
+
+            $select->join($db->NewspapersNewspaper,
+                "{$db->NewspapersNewspaper}.id = {$db->NewspapersIssue}.newspaper_id", array());
+            
+            
+            $select->where("{$db->NewspapersNewspaper}.state = ? ", $params['state']);
+        }
+        
+        if(isset($params['pages'])) {
+            if (! $select->hasJoin($db->NewspapersIssues)) {
+                $select->join($db->NewspapersIssues,
+                    "{$db->NewspapersFrontPage}.issue_id = {$db->NewspapersIssue}.id", array());                
+            }
+            $select->where("{$db->NewspapersIssue}.pages = ?", $params['pages']);
+        }
     }
     
     protected function installElementSets()

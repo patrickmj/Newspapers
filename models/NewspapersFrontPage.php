@@ -29,13 +29,17 @@ class NewspapersFrontPage extends Omeka_Record_AbstractRecord
     
     public function dimensionsSvg()
     {
-        $baseWidth = 240;
-        $baseHeight = 240;
+        $maxHeigh = 32000;
+        $maxWidth = 22000;
+        
+        
+        $baseWidth = 220;
+        $baseHeight = 320;
         //when I know the real max and min widths from all papers, use
         //that to normalize to the base width and height
         
-        $normalizedWidth = 200; //fake data!
-        $normalizedHeight = 230; //fake data!
+        $normalizedWidth = $this->page_width / 100;
+        $normalizedHeight = $this->page_height / 100;
         
         $colElWidth = $normalizedWidth - 20;
         $colElHeight = $normalizedHeight - 10;

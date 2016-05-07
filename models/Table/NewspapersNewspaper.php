@@ -133,17 +133,11 @@ class Table_NewspapersNewspaper extends Omeka_Db_Table
         }
         // $select->where("{$db->NewspapersNewspaper}.id = ?", $newspaperIds);
         
-debug($select);
-$result = $this->_db->fetchAll($select);
-print_r($result);
-
-
-die();        
-        return $this->query($select);
-        return $this->fetchAll(
-                    $this->select()
-                        ->from($this, array(new Zend_Db_Expr('max(id) as maxId')))
-                    );
+        
+        
+        $result = $this->_db->fetchAll($select);
+        return $result;
+        
         
     }
 }

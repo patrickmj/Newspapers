@@ -55,10 +55,6 @@ class Newspapers_CaImport_CaImport extends Omeka_Job_AbstractJob
     
     protected function parseFrontPageData($issueJson, $issue, $newspaper)
     {
-        //I've have not idea why this is needed
-        if (! class_exists('Alto2Svg')) {
-            include(BASE_DIR . '/plugins/Newspapers/libraries/alto2svg/Alto2Svg.php');
-        }
         $frontpage = new NewspapersFrontPage();
         
         $itemElementMetadata = array('Dublin Core' => array(), 'Newspaper Metadata' => array());
@@ -78,22 +74,6 @@ class Newspapers_CaImport_CaImport extends Omeka_Job_AbstractJob
         //or just do db churn and processing here?
         $altoDoc = new AltoDoc($altoUrl);
         
-        $alto2svg = new Alto2Svg($altoDoc->alto);
-        $svg = $alto2svg->process();
-        $tempSvgPath = tempnam(sys_get_temp_dir(), 'omeka_plugin_newspapers_');
-        $handle = fopen($tempSvgPath, "w");
-        fwrite($handle, $svg);
-        fclose($handle);
-        chmod($tempSvgPath, 777);
-        debug('tempsvgpath ' . $tempSvgPath);
-        
-        
-        $builder = new Builder_Item(get_db());
-        $builder->setRecord($item);
-        $builder->addFiles('Filesystem', $tempSvgPath);
-        
-        
-        unlink($tempSvgPath);
         
         
 //begin voodoo
