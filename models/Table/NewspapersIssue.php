@@ -1,6 +1,6 @@
 <?php
 
-class Table_NewspapersFrontPage extends Omeka_Db_Table
+class Table_NewspapersIssue extends Omeka_Db_Table
 {
     public function findByItemId($itemId)
     {

@@ -9,6 +9,13 @@ class Table_NewspapersNewspaper extends Omeka_Db_Table
         return $this->fetchObject($select);
     }
     
+    public function findByLccn($lccn)
+    {
+        $select = $this->getSelect();
+        $select->where("lccn = $lccn");
+        return $this->fetchObject($select);
+    }
+    
     /**
      * 
      * @param unknown_type $params
@@ -131,12 +138,9 @@ class Table_NewspapersNewspaper extends Omeka_Db_Table
         if (! empty($newspaperIds)) {
             $select->where("{$db->NewspapersNewspaper}.id IN (?)", $newspaperIds);
         }
-        // $select->where("{$db->NewspapersNewspaper}.id = ?", $newspaperIds);
-        
-        
         
         $result = $this->_db->fetchAll($select);
-        return $result;
+        return $result[0];
         
         
     }

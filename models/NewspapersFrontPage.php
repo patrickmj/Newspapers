@@ -29,29 +29,30 @@ class NewspapersFrontPage extends Omeka_Record_AbstractRecord
     
     public function dimensionsSvg()
     {
-        $maxHeigh = 32000;
-        $maxWidth = 22000;
+        $maxHeight = 53000; //based on max in db
+        $maxWidth = 38000; //based on max in db
         
+        $scale = 150; //first scale-down for display
+        $baseHeight = $maxHeight / $scale;
+        $baseWidth = $maxWidth / $scale;
         
-        $baseWidth = 220;
-        $baseHeight = 320;
         //when I know the real max and min widths from all papers, use
         //that to normalize to the base width and height
         
-        $normalizedWidth = $this->page_width / 100;
-        $normalizedHeight = $this->page_height / 100;
+        $normalizedWidth = $this->page_width / $scale;
+        $normalizedHeight = $this->page_height / $scale;
         
-        $colElWidth = $normalizedWidth - 20;
-        $colElHeight = $normalizedHeight - 10;
+        $colElWidth = $normalizedWidth - 2;
+        $colElHeight = $normalizedHeight - 2;
         
-        $colWidthScale = .99/$this->columns; //fudge the width to be a smidge smaller than 1/cols
+        $colWidthScale = .90 / $this->columns; //fudge the width to be a smidge smaller than 1/cols
         
         $svg = "
         
 <svg xmlns='http://www.w3.org/2000/svg' width='$baseWidth' height='$baseHeight' fill='white'>
     <g id='column' transform='translate(40, 10)'>
         <rect width='$normalizedWidth' height='$normalizedHeight' fill='white'></rect>
-        <rect x='4' y='4'  width='$colElWidth' height='$colElHeight' fill='gray'></rect>
+        <rect x='1' y='1'  width='$colElWidth' height='$colElHeight' fill='gray'></rect>
     </g>
     
     <rect width='$baseWidth' height='$baseHeight' color='white' fill='white' stroke='black'></rect>

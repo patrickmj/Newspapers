@@ -2,12 +2,37 @@ div.sotn-images {
     clear: both;
 }
 
-div.sotn-images div.svg {
-    
-}
-
 div.sotn-images iframe.ca-container {
     float: left;
     width: 60%;
     height: 300px;
+}
+
+
+
+div.newspaper-data-wrapper {
+    display: block;
+    width: 100% !important;
+    clear: both;
+}
+
+div.newspaper-data-wrapper.front-page {
+    
+}
+
+div.newspaper-data-wrapper.front-page div.svg {
+    float: left;
+}
+
+div.newspaper-data-wrapper.front-page .stats {
+    position: relative;
+    left: 140px;
+    width: 40%;
+    margin: 0;
+    padding: 0;
+}
+
+div.newspaper-data-wrapper > div {
+    display: inline-block;
+    width: 22%;
 }

@@ -15,7 +15,7 @@ class Newspapers_CaImport_CaImport extends Omeka_Job_AbstractJob
         foreach($newspapers['newspapers'] as $index => $newspaperData) {
             
         //for testing grab every $whatever interval
-            if ($index %1000 != 0 ) {
+            if ($index %100 < 22 ) {
                 continue;
             }
             $newspaper = $this->parseNewspaperData($newspaperData);
@@ -25,11 +25,14 @@ class Newspapers_CaImport_CaImport extends Omeka_Job_AbstractJob
             foreach($issuesData as $issueData) {
                 $issueUrl = $issueData['url'];
                 $issueJson = $this->fetchData($issueUrl);
-            
-                $issue = $this->parseIssueData($issueJson, $newspaper);
-                $frontPage = $this->parseFrontPageData($issueJson, $issue, $newspaper);
+                try {
+                    $issue = $this->parseIssueData($issueJson, $newspaper);
+                    $frontPage = $this->parseFrontPageData($issueJson, $issue, $newspaper);
+                } catch(Exception $e) {
+                    debug($e);
+                    debug(print_r($issueJson, true));
+                }
             }
-            
         }
     }
     
@@ -69,38 +72,38 @@ class Newspapers_CaImport_CaImport extends Omeka_Job_AbstractJob
         $itemElementMetadata['Dublin Core']['Date'] = array(array('text' => $date, 'html' => false));
         
         $filesMetadata = array('file_transfer_type' => 'Url', 'files' => $altoUrl, 'file_ingest_options' => array());
-        $item = insert_item($itemMetadata, $itemElementMetadata, $filesMetadata);
-        //@TODO to handle alto2svg conversion, a new Omeka_File_Ingest_AbstractIngest implementation?
-        //or just do db churn and processing here?
-        $altoDoc = new AltoDoc($altoUrl);
         
+        try {
+            $item = insert_item($itemMetadata, $itemElementMetadata, $filesMetadata);
+        } catch (Exception $e) {
+            debug($e);
+            $item = false;
+        }
         
-        
-//begin voodoo
-        $bottomTls = $altoDoc->filterTlsByVpos(null, .5);
-        $tls = $altoDoc->filterTlsByHeightSd($bottomTls, 1.1);
-        $tls = $altoDoc->filterTlsByWidthSd($tls);
-        $columnsGuess = $altoDoc->guessColumnsFromTls($tls, .7, null, 1.12);
-//end voodoo
-        
-        
-        
-        
-        
-        $frontpage->columns = $columnsGuess;
-        $frontpage->item_id = $item->id;
-        $frontpage->issue_id = $issue->id;
-        $frontpage->ca_import_id = 1; //fake @todo
-        $frontpage->page_height = $altoDoc->pageLayout['page']['height'];
-        $frontpage->page_width = $altoDoc->pageLayout['page']['width'];
-        $frontpage->printspace_height = $altoDoc->pageLayout['printSpace']['height'];
-        $frontpage->printspace_width = $altoDoc->pageLayout['printSpace']['width'];
-        $frontpage->printspace_vpos = $altoDoc->pageLayout['printSpace']['hpos'];
-        $frontpage->printspace_hpos = $altoDoc->pageLayout['printSpace']['hpos'];
-        $frontpage->loc_uri = $issueJson['pages'][0]['url'];
-        $frontpage->pdf_url = $pdfUrl;
-        
-        $frontpage->save();
+        if ($item) {
+            $altoDoc = new AltoDoc($altoUrl);
+            //begin voodoo
+                    $bottomTls = $altoDoc->filterTlsByVpos(null, .5);
+                    $tls = $altoDoc->filterTlsByHeightSd($bottomTls, 1.1);
+                    $tls = $altoDoc->filterTlsByWidthSd($tls);
+                    $columnsGuess = $altoDoc->guessColumnsFromTls($tls, .7, null, 1.12);
+            //end voodoo
+            
+            $frontpage->columns = $columnsGuess;
+            $frontpage->item_id = $item->id;
+            $frontpage->issue_id = $issue->id;
+            $frontpage->ca_import_id = 1; //fake @todo
+            $frontpage->page_height = $altoDoc->pageLayout['page']['height'];
+            $frontpage->page_width = $altoDoc->pageLayout['page']['width'];
+            $frontpage->printspace_height = $altoDoc->pageLayout['printSpace']['height'];
+            $frontpage->printspace_width = $altoDoc->pageLayout['printSpace']['width'];
+            $frontpage->printspace_vpos = $altoDoc->pageLayout['printSpace']['hpos'];
+            $frontpage->printspace_hpos = $altoDoc->pageLayout['printSpace']['hpos'];
+            $frontpage->loc_uri = $issueJson['pages'][0]['url'];
+            $frontpage->pdf_url = $pdfUrl;
+            
+            $frontpage->save();
+        }
     }
     
     protected function parseNewspaperData($newspaperJson)
