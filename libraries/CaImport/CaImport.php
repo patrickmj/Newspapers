@@ -5,31 +5,53 @@ class Newspapers_CaImport_CaImport extends Omeka_Job_AbstractJob
     
     protected $client;
     
+    protected $newspapersTable;
+    
+    protected $issuesTable;
+    
+    protected $frontPagesTable;
+    
     public function perform()
     {
         $this->client = new Zend_Http_Client();
         
-        $newspapersUrl = 'http://chroniclingamerica.loc.gov/newspapers.json';
-        $newspapers = $this->fetchData($newspapersUrl);
+        $db = get_db();
+        $this->newspapersTable = $db->getTable('NewspapersNewspaper');
+        $this->issuesTable = $db->getTable('NewspapersIssue');
+        $this->frontPagesTable = $db->getTable('NewspapersFrontPage');
         
+        $newspapersUrl = 'http://chroniclingamerica.loc.gov/newspapers.json';
+        try {
+            $newspapers = $this->fetchData($newspapersUrl);
+        } catch (Exception $e) {
+            debug($e);
+        }
         foreach($newspapers['newspapers'] as $index => $newspaperData) {
             
         //for testing grab every $whatever interval
-            if ($index %100 < 22 ) {
+        
+            if ($index %100 == 40 ) {
                 continue;
             }
+            
             $newspaper = $this->parseNewspaperData($newspaperData);
             $newspaperUrl = $newspaperData['url'];
             $deepNpData = $this->fetchData($newspaperUrl);
+            if (! $deepNpData) {
+                continue;
+            }
             $issuesData = $deepNpData['issues'];
             foreach($issuesData as $issueData) {
                 $issueUrl = $issueData['url'];
                 $issueJson = $this->fetchData($issueUrl);
+                if(! $issueJson) {
+                    continue;
+                }
                 try {
                     $issue = $this->parseIssueData($issueJson, $newspaper);
                     $frontPage = $this->parseFrontPageData($issueJson, $issue, $newspaper);
                 } catch(Exception $e) {
-                    debug($e);
+                    debug($e->getMessage());
                     debug(print_r($issueJson, true));
                 }
             }
@@ -38,14 +60,24 @@ class Newspapers_CaImport_CaImport extends Omeka_Job_AbstractJob
     
     protected function fetchData($url)
     {
-        usleep(50);
+        usleep(10);
+        debug($url);
         $this->client->setUri($url);
-        $response = $this->client->request();
+        try {
+            $response = $this->client->request();
+        } catch (Exception $e) {
+            debug($e->getMessage());
+            return false;
+        }
         return json_decode($response->getBody(), true);
     }
     
     protected function parseIssueData($issueJson, $newspaper)
     {
+        $issue = $this->issuesTable->findByLocUri($issueJson['url']);
+        if ($issue) {
+            return $issue;
+        }
         $issue = new NewspapersIssue();
         $issue->loc_uri = $issueJson['url'];
         $issue->pages = count($issueJson['pages']);
@@ -58,51 +90,61 @@ class Newspapers_CaImport_CaImport extends Omeka_Job_AbstractJob
     
     protected function parseFrontPageData($issueJson, $issue, $newspaper)
     {
-        $frontpage = new NewspapersFrontPage();
-        
-        $itemElementMetadata = array('Dublin Core' => array(), 'Newspaper Metadata' => array());
-        $itemMetadata = array('collection_id' => $newspaper->collection_id, 'public' => true); //fake @todo
-        
         $frontpageJson = $this->fetchData($issueJson['pages'][0]['url']);
-        $altoUrl = $frontpageJson['ocr'];
-        $pdfUrl = $frontpageJson['pdf'];
-        $date = $frontpageJson['issue']['date_issued'];
-        $title = $issueJson['title']['name'] . ' ' . $date;
-        $itemElementMetadata['Dublin Core']['Title'] = array(array('text' => $title, 'html' => false));
-        $itemElementMetadata['Dublin Core']['Date'] = array(array('text' => $date, 'html' => false));
+        $frontPage = $this->frontPagesTable->findByLocUri($issueJson['pages'][0]['url']);
         
-        $filesMetadata = array('file_transfer_type' => 'Url', 'files' => $altoUrl, 'file_ingest_options' => array());
-        
-        try {
-            $item = insert_item($itemMetadata, $itemElementMetadata, $filesMetadata);
-        } catch (Exception $e) {
-            debug($e);
-            $item = false;
-        }
-        
-        if ($item) {
-            $altoDoc = new AltoDoc($altoUrl);
-            //begin voodoo
-                    $bottomTls = $altoDoc->filterTlsByVpos(null, .5);
-                    $tls = $altoDoc->filterTlsByHeightSd($bottomTls, 1.1);
-                    $tls = $altoDoc->filterTlsByWidthSd($tls);
-                    $columnsGuess = $altoDoc->guessColumnsFromTls($tls, .7, null, 1.12);
-            //end voodoo
+        if (! $frontPage) {
+            $frontpage = new NewspapersFrontPage();
             
-            $frontpage->columns = $columnsGuess;
-            $frontpage->item_id = $item->id;
-            $frontpage->issue_id = $issue->id;
-            $frontpage->ca_import_id = 1; //fake @todo
-            $frontpage->page_height = $altoDoc->pageLayout['page']['height'];
-            $frontpage->page_width = $altoDoc->pageLayout['page']['width'];
-            $frontpage->printspace_height = $altoDoc->pageLayout['printSpace']['height'];
-            $frontpage->printspace_width = $altoDoc->pageLayout['printSpace']['width'];
-            $frontpage->printspace_vpos = $altoDoc->pageLayout['printSpace']['hpos'];
-            $frontpage->printspace_hpos = $altoDoc->pageLayout['printSpace']['hpos'];
-            $frontpage->loc_uri = $issueJson['pages'][0]['url'];
-            $frontpage->pdf_url = $pdfUrl;
+            $itemElementMetadata = array('Dublin Core' => array(), 'Newspaper Metadata' => array());
+            $itemMetadata = array('collection_id' => $newspaper->collection_id, 'public' => true); //fake @todo
             
-            $frontpage->save();
+            
+            $altoUrl = $frontpageJson['ocr'];
+            $pdfUrl = $frontpageJson['pdf'];
+            $date = $frontpageJson['issue']['date_issued'];
+            $title = $issueJson['title']['name'] . ' ' . $date;
+            $itemElementMetadata['Dublin Core']['Title'] = array(array('text' => $title, 'html' => false));
+            $itemElementMetadata['Dublin Core']['Date'] = array(array('text' => $date, 'html' => false));
+            
+            $filesMetadata = array('file_transfer_type' => 'Url', 'files' => $altoUrl, 'file_ingest_options' => array());
+            
+            try {
+                $item = insert_item($itemMetadata, $itemElementMetadata, $filesMetadata);
+            } catch (Exception $e) {
+                debug($e->getMessage());
+                $item = false;
+            }
+            
+            if ($item) {
+                $altoDoc = new AltoDoc($altoUrl);
+                //begin voodoo
+                    try {
+                        $bottomTls = $altoDoc->filterTlsByVpos(null, .5);
+                        $tls = $altoDoc->filterTlsByHeightSd($bottomTls, 1.1);
+                        $tls = $altoDoc->filterTlsByWidthSd($tls);
+                        $columnsGuess = $altoDoc->guessColumnsFromTls($tls, .7, null, 1.12);
+                    } catch(Exception $e) {
+                        echo 'bad xml in ';
+                        echo $issueJson['pages'][0]['url'];
+                    }
+                //end voodoo
+                
+                $frontpage->columns = $columnsGuess;
+                $frontpage->item_id = $item->id;
+                $frontpage->issue_id = $issue->id;
+                $frontpage->ca_import_id = 1; //fake @todo
+                $frontpage->page_height = $altoDoc->pageLayout['page']['height'];
+                $frontpage->page_width = $altoDoc->pageLayout['page']['width'];
+                $frontpage->printspace_height = $altoDoc->pageLayout['printSpace']['height'];
+                $frontpage->printspace_width = $altoDoc->pageLayout['printSpace']['width'];
+                $frontpage->printspace_vpos = $altoDoc->pageLayout['printSpace']['hpos'];
+                $frontpage->printspace_hpos = $altoDoc->pageLayout['printSpace']['hpos'];
+                $frontpage->loc_uri = $issueJson['pages'][0]['url'];
+                $frontpage->pdf_url = $pdfUrl;
+                
+                $frontpage->save();
+            }
         }
     }
     
@@ -110,13 +152,19 @@ class Newspapers_CaImport_CaImport extends Omeka_Job_AbstractJob
     {
         //$newspaperJson comes from entry from newspapers.json
         //fetch second layer of data
-        
+
         $newspaperDetailsJson = $this->fetchData($newspaperJson['url']);
+        $lccn = $newspaperJson['lccn'];
+        
+        $newspaper = $this->newspapersTable->findByLccn($lccn);
+        if ($newspaper) {
+            return $newspaper;
+        }
+        
         //set element set data
         //need an element set for Newspaper
         $metadata = array('Dublin Core' => array(), 'Newspaper Metadata' => array());
-        
-        
+
         //switch around hanlding of each data field
         foreach($newspaperDetailsJson as $key => $values) {
             switch($key) {
@@ -132,7 +180,7 @@ class Newspapers_CaImport_CaImport extends Omeka_Job_AbstractJob
                         array('html' => false, 'text' => $values),
                     );
                 break;
-                
+
                 case 'place':
                     $placesArray = array();
                     foreach($values as $value) {
@@ -140,14 +188,14 @@ class Newspapers_CaImport_CaImport extends Omeka_Job_AbstractJob
                     }
                     $metadata['Newspaper Metadata']['place'] = $placesArray;
                 break;
-                
+
                 case 'name':
                     // dc:title
                     $metadata['Dublin Core']['Title'] = array(
                         array('html' => false, 'text' => $values),
                     );
                 break;
-                
+
                 case 'publisher':
                     // dc:publisher
                     $metadata['Dublin Core']['Publisher'] = array(
@@ -155,9 +203,9 @@ class Newspapers_CaImport_CaImport extends Omeka_Job_AbstractJob
                     );
                 break;
                 case 'issues':
-                    
+
                 break;
-                
+
                 case 'subject':
                     $subjectsArray = array();
                     foreach($values as $value) {
@@ -165,8 +213,6 @@ class Newspapers_CaImport_CaImport extends Omeka_Job_AbstractJob
                     }
                     $metadata['Dublin Core']['Subject'] = $subjectsArray;
                 break;
-                
-                
             }
 
         }
@@ -176,7 +222,7 @@ class Newspapers_CaImport_CaImport extends Omeka_Job_AbstractJob
         $newspaper = new NewspapersNewspaper();
         //$newspaper->collection_id = $collection->id;
         $newspaper->collection_id = $collection->id;
-        $newspaper->ca_import_id = 1; //fake! @todo
+        //$newspaper->ca_import_id = 1; //fake! @todo
         $newspaper->lccn = $newspaperJson['lccn'];
         $newspaper->state = $newspaperJson['state'];
         $newspaper->issues_count = count($newspaperDetailsJson['issues']);

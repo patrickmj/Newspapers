@@ -12,7 +12,7 @@ class Table_NewspapersFrontPage extends Omeka_Db_Table
     public function findByLocUri($locUri)
     {
         $select = $this->getSelect();
-        $select->where("loc_uri = $locUri");
+        $select->where("loc_uri = ?", $locUri);
         return $this->fetchObject($select);
     }
     
@@ -20,6 +20,11 @@ class Table_NewspapersFrontPage extends Omeka_Db_Table
     {
         $itemId = $frontPage->item_id;
         return $this->getDb()->getTable('Item')->find($itemId);
-        
+    }
+    
+    public function importExists($locUri)
+    {
+        $count = $this->count(array('loc_uri' => $locUri));
+        return $count !== 0;
     }
 }

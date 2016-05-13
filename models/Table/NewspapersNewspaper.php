@@ -12,8 +12,15 @@ class Table_NewspapersNewspaper extends Omeka_Db_Table
     public function findByLccn($lccn)
     {
         $select = $this->getSelect();
-        $select->where("lccn = $lccn");
+        
+        $select->where("lccn = ?", $lccn);
         return $this->fetchObject($select);
+    }
+    
+    public function importExists($lccn)
+    {
+        $count = $this->count(array('lccn' => $lccn));
+        return $count !== 0;
     }
     
     /**
