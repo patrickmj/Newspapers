@@ -4,6 +4,7 @@ define('NEWSPAPERS_PLUGIN_DIR', PLUGIN_DIR . '/Newspapers');
 
 class NewspapersPlugin extends Omeka_Plugin_AbstractPlugin
 {
+    
     public $_hooks = array(
             'install',
             'uninstall',
@@ -72,6 +73,24 @@ class NewspapersPlugin extends Omeka_Plugin_AbstractPlugin
     ) ENGINE=InnoDB  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
     ";
     $db->query($sql);
+    
+    
+    $sql = "
+    CREATE TABLE IF NOT EXISTS `$db->NewspapersColumnsCorrection` (
+      `id` int(11) NOT NULL AUTO_INCREMENT,
+      `fp_id` int(11) NOT NULL,
+      `user_id` int(11) DEFAULT NULL,
+      `corrected_columns` int(11) NOT NULL,
+      `original_columns` int(11) NOT NULL,
+      `reported_date` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      `accepted_date` timestamp NULL DEFAULT NULL,
+      PRIMARY KEY (`id`),
+      KEY `fp_id` (`fp_id`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci AUTO_INCREMENT=1 ;
+    
+    ";
+    
+    $db->query($sql);
     }
     
     public function hookUninstall()
@@ -84,6 +103,9 @@ class NewspapersPlugin extends Omeka_Plugin_AbstractPlugin
         $db->query($sql);
         
         $sql = "DROP TABLE IF EXISTS `$db->NewspapersFrontPages`";
+        $db->query($sql);
+        
+        $sql = "DROP TABLE IF EXISTS `$db->NewspapersColumnsCorrection`";
         $db->query($sql);
     }
     

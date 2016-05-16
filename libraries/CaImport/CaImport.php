@@ -14,7 +14,7 @@ class Newspapers_CaImport_CaImport extends Omeka_Job_AbstractJob
     public function perform()
     {
         $this->client = new Zend_Http_Client();
-        
+        ini_set('max_execution_time', 3000); //hope this doesn't get me into trouble, but some of those ocrs take a while. sorry, LoC!
         $db = get_db();
         $this->newspapersTable = $db->getTable('NewspapersNewspaper');
         $this->issuesTable = $db->getTable('NewspapersIssue');
@@ -24,20 +24,29 @@ class Newspapers_CaImport_CaImport extends Omeka_Job_AbstractJob
         try {
             $newspapers = $this->fetchData($newspapersUrl);
         } catch (Exception $e) {
-            debug($e);
+            debug($e->getMessage());
         }
+        
+        
         foreach($newspapers['newspapers'] as $index => $newspaperData) {
             
-        //for testing grab every $whatever interval
-        
-            if ($index %100 == 40 ) {
+            if ( ! ( $index >= 106 && $index <= 200) ) {
                 continue;
             }
-            
+            debug("Begin index $index");
             $newspaper = $this->parseNewspaperData($newspaperData);
             $newspaperUrl = $newspaperData['url'];
+
+            
+            //skip the Memphis Appeal, which returns piles of no xml, and slows it all down
+            if ($newspaperUrl == 'http://chroniclingamerica.loc.gov/lccn/sn83045160.json') {
+                debug('skipping Memphis Appeal');
+                continue;
+            }
+
             $deepNpData = $this->fetchData($newspaperUrl);
             if (! $deepNpData) {
+                debug("skipping $newspaperUrl for no data");
                 continue;
             }
             $issuesData = $deepNpData['issues'];
@@ -55,17 +64,20 @@ class Newspapers_CaImport_CaImport extends Omeka_Job_AbstractJob
                     debug(print_r($issueJson, true));
                 }
             }
+            debug("Done index $index");
         }
+
     }
     
     protected function fetchData($url)
     {
         usleep(10);
-        debug($url);
+        
         $this->client->setUri($url);
         try {
             $response = $this->client->request();
         } catch (Exception $e) {
+            debug($url);
             debug($e->getMessage());
             return false;
         }

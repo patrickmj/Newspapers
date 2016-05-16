@@ -30,7 +30,10 @@ class NewspapersFrontPage extends Omeka_Record_AbstractRecord
     public function dimensionsSvg()
     {
         $maxHeight = 53000; //based on max in db
-        $maxWidth = 38000; //based on max in db
+        $maxWidth = 44000; //based on max in db
+        $avgWidth = 21434;
+        $avgHeight = 28706;
+        
         
         $scale = 150; //first scale-down for display
         $baseHeight = $maxHeight / $scale;
@@ -47,6 +50,10 @@ class NewspapersFrontPage extends Omeka_Record_AbstractRecord
         
         $colWidthScale = .90 / $this->columns; //fudge the width to be a smidge smaller than 1/cols
         
+        $avgWidth  = $avgWidth / $scale; // temp @todo
+        $avgHeight = $avgHeight / $scale; // temp @todo
+        
+        
         $svg = "
         
 <svg xmlns='http://www.w3.org/2000/svg' width='$baseWidth' height='$baseHeight' fill='white'>
@@ -55,8 +62,10 @@ class NewspapersFrontPage extends Omeka_Record_AbstractRecord
         <rect x='1' y='1'  width='$colElWidth' height='$colElHeight' fill='gray'></rect>
     </g>
     
-    <rect width='$baseWidth' height='$baseHeight' color='white' fill='white' stroke='black'></rect>
-    <rect x='5' y='5' width='$normalizedWidth' height='$normalizedHeight' stroke='black'></rect>
+    
+    <rect id='background' width='$baseWidth' height='$baseHeight' color='white' fill='white' stroke='black'></rect>
+    <rect id='average-dimensions' width='$avgWidth' height='$avgHeight' stroke='red' stroke-width='5'></rect>
+    <rect id='front-page' x='5' y='5' width='$normalizedWidth' height='$normalizedHeight' stroke='black'></rect>
     
     
     
