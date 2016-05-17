@@ -14,7 +14,7 @@ class Newspapers_CaImport_CaImport extends Omeka_Job_AbstractJob
     public function perform()
     {
         $this->client = new Zend_Http_Client();
-        ini_set('max_execution_time', 3000); //hope this doesn't get me into trouble, but some of those ocrs take a while. sorry, LoC!
+        ini_set('max_execution_time', 30000); //hope this doesn't get me into trouble, but some of those ocrs take a while. sorry, LoC!
         $db = get_db();
         $this->newspapersTable = $db->getTable('NewspapersNewspaper');
         $this->issuesTable = $db->getTable('NewspapersIssue');
@@ -30,7 +30,7 @@ class Newspapers_CaImport_CaImport extends Omeka_Job_AbstractJob
         
         foreach($newspapers['newspapers'] as $index => $newspaperData) {
             
-            if ( ! ( $index >= 106 && $index <= 200) ) {
+            if ( ! ( $index >= 126 && $index <= 200) ) {
                 continue;
             }
             debug("Begin index $index");
@@ -119,10 +119,9 @@ class Newspapers_CaImport_CaImport extends Omeka_Job_AbstractJob
             $itemElementMetadata['Dublin Core']['Title'] = array(array('text' => $title, 'html' => false));
             $itemElementMetadata['Dublin Core']['Date'] = array(array('text' => $date, 'html' => false));
             
-            $filesMetadata = array('file_transfer_type' => 'Url', 'files' => $altoUrl, 'file_ingest_options' => array());
             
             try {
-                $item = insert_item($itemMetadata, $itemElementMetadata, $filesMetadata);
+                $item = insert_item($itemMetadata, $itemElementMetadata);
             } catch (Exception $e) {
                 debug($e->getMessage());
                 $item = false;

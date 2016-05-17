@@ -21,7 +21,11 @@ class AltoDoc
     public function __construct($alto)
     {
         $this->alto = new DOMDocument();
-        $this->alto->load($alto);
+        try {
+            $this->alto->load($alto);
+        } catch (Exception $e) {
+            debug('failed loading doc at ' . $alto);
+        }
         
         $this->xpath = new DOMXPath($this->alto);
         //srsly? the namespace for these documents isn't consistent?
