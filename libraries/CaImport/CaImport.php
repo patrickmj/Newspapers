@@ -30,12 +30,14 @@ class Newspapers_CaImport_CaImport extends Omeka_Job_AbstractJob
         
         foreach($newspapers['newspapers'] as $index => $newspaperData) {
             
-            if ( ! ( $index >= 126 && $index <= 200) ) {
+            if ( ! ( $index >= 460 && $index <= 600) ) {
                 continue;
             }
             debug("Begin index $index");
-            $newspaper = $this->parseNewspaperData($newspaperData);
             $newspaperUrl = $newspaperData['url'];
+            $deepNpData = $this->fetchData($newspaperUrl);
+            $newspaper = $this->parseNewspaperData($newspaperData, $deepNpData);
+            
 
             
             //skip the Memphis Appeal, which returns piles of no xml, and slows it all down
@@ -44,13 +46,19 @@ class Newspapers_CaImport_CaImport extends Omeka_Job_AbstractJob
                 continue;
             }
 
-            $deepNpData = $this->fetchData($newspaperUrl);
+            
             if (! $deepNpData) {
                 debug("skipping $newspaperUrl for no data");
                 continue;
             }
             $issuesData = $deepNpData['issues'];
-            foreach($issuesData as $issueData) {
+            
+            foreach($issuesData as $issueIndex=>$issueData) {
+                if($newspaper->issues_count > 1000) {
+                    if($issueIndex % 10 != 0) {
+                        continue;
+                    }
+                }
                 $issueUrl = $issueData['url'];
                 $issueJson = $this->fetchData($issueUrl);
                 if(! $issueJson) {
@@ -71,7 +79,7 @@ class Newspapers_CaImport_CaImport extends Omeka_Job_AbstractJob
     
     protected function fetchData($url)
     {
-        usleep(10);
+        usleep(5);
         
         $this->client->setUri($url);
         try {
@@ -129,6 +137,10 @@ class Newspapers_CaImport_CaImport extends Omeka_Job_AbstractJob
             
             if ($item) {
                 $altoDoc = new AltoDoc($altoUrl);
+                if ($altoDoc->error) {
+                    debug('failed loading ' . $altoUrl);
+                    return;
+                }
                 //begin voodoo
                     try {
                         $bottomTls = $altoDoc->filterTlsByVpos(null, .5);
@@ -159,12 +171,11 @@ class Newspapers_CaImport_CaImport extends Omeka_Job_AbstractJob
         }
     }
     
-    protected function parseNewspaperData($newspaperJson)
+    protected function parseNewspaperData($newspaperJson, $newspaperDetailsJson)
     {
         //$newspaperJson comes from entry from newspapers.json
         //fetch second layer of data
 
-        $newspaperDetailsJson = $this->fetchData($newspaperJson['url']);
         $lccn = $newspaperJson['lccn'];
         
         $newspaper = $this->newspapersTable->findByLccn($lccn);

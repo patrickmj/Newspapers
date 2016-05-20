@@ -14,6 +14,8 @@ class AltoDoc
     
     public $columnCount;
     
+    public $error = false;
+    
     protected $textLines;
     
     protected $textBlocks;
@@ -21,15 +23,19 @@ class AltoDoc
     public function __construct($alto)
     {
         $this->alto = new DOMDocument();
-        try {
-            $this->alto->load($alto);
-        } catch (Exception $e) {
-            debug('failed loading doc at ' . $alto);
+
+        if (! $this->alto->load($alto) ) {
+            $this->error = true;
+            return false;
         }
         
         $this->xpath = new DOMXPath($this->alto);
         //srsly? the namespace for these documents isn't consistent?
-        $altoNSUri = $this->alto->documentElement->lookupNamespaceUri(null);
+        try {
+            $altoNSUri = $this->alto->documentElement->lookupNamespaceUri(null);
+        } catch (Exception $e) {
+            debug($e);
+        }
         $this->xpath->registerNamespace('alto', $altoNSUri);
         $this->setPageLayout();
     }
