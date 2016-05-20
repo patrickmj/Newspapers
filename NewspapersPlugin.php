@@ -10,7 +10,8 @@ class NewspapersPlugin extends Omeka_Plugin_AbstractPlugin
             'uninstall',
             'initialize',
             'public_head',
-            'items_browse_sql'
+            'items_browse_sql',
+            'collections_browse_sql'
             );
     
     public $_filters = array(
@@ -145,6 +146,63 @@ class NewspapersPlugin extends Omeka_Plugin_AbstractPlugin
                     "{$db->NewspapersFrontPage}.issue_id = {$db->NewspapersIssue}.id", array());                
             }
             $select->where("{$db->NewspapersIssue}.pages = ?", $params['pages']);
+        }
+    }
+    
+    public function hookCollectionsBrowseSql($args)
+    {
+        $select = $args['select'];
+        $params = $args['params'];
+        $db = get_db();
+        
+        if (! isset($params['advanced'])) {
+            return;
+        }
+        
+        $terms = $params['advanced'];
+        
+        
+        
+        $advancedIndex = 0;
+        foreach ($terms as $v) {
+            // Do not search on blank rows.
+            if (empty($v['element_id']) || empty($v['type'])) {
+                continue;
+            }
+            
+            $value = isset($v['terms']) ? $v['terms'] : null;
+            $type = $v['type'];
+            $elementId = (int) $v['element_id'];
+            $alias = "_advanced_{$advancedIndex}";
+
+            //copied from Item advanced search filter, and limited to what I
+            //use in the modified SearchByMetadata
+            
+            $inner = true;
+            $extraJoinCondition = '';
+            // Determine what the WHERE clause should look like.
+            switch ($type) {
+                case 'is exactly':
+                    $predicate = ' = ' . $db->quote($value);
+                    break;
+                default:
+                    throw new Omeka_Record_Exception(__('Invalid search type given!'));
+            }
+
+            // Note that $elementId was earlier forced to int, so manual quoting
+            // is unnecessary here
+            $joinCondition = "{$alias}.record_id = collections.id AND {$alias}.record_type = 'Collection' AND {$alias}.element_id = $elementId";
+            if ($extraJoinCondition) {
+                $joinCondition .= ' ' . $extraJoinCondition;
+            }
+            if ($inner) {
+                $select->joinInner(array($alias => $db->ElementText), $joinCondition, array());
+            } else {
+                $select->joinLeft(array($alias => $db->ElementText), $joinCondition, array());
+            }
+            $select->where("{$alias}.text {$predicate}");
+
+            $advancedIndex++;
         }
     }
     
