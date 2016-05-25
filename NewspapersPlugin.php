@@ -2,6 +2,12 @@
 
 define('NEWSPAPERS_PLUGIN_DIR', PLUGIN_DIR . '/Newspapers');
 
+define('NEWSPAPERS_MAX_HEIGHT', 52220);
+define('NEWSPAPERS_MAX_WIDTH', 42964);
+define('NEWSPAPERS_AVG_HEIGHT', 28538.8757 );
+define('NEWSPAPERS_AVG_WIDTH', 21072.6768 );
+
+
 class NewspapersPlugin extends Omeka_Plugin_AbstractPlugin
 {
     
@@ -85,6 +91,9 @@ class NewspapersPlugin extends Omeka_Plugin_AbstractPlugin
       `original_columns` int(11) NOT NULL,
       `reported_date` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
       `accepted_date` timestamp NULL DEFAULT NULL,
+      `np_id` int(11) NULL,
+      `apply_to_np` tinyint(1) DEFAULT NULL,
+      `notes` text COLLATE utf8_unicode_ci,
       PRIMARY KEY (`id`),
       KEY `fp_id` (`fp_id`)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci AUTO_INCREMENT=1 ;
@@ -113,6 +122,7 @@ class NewspapersPlugin extends Omeka_Plugin_AbstractPlugin
     public function hookPublicHead($args)
     {
         queue_css_file('sotn');
+        queue_js_file('corrections');
     }
     
     public function hookItemsBrowseSql($args)
@@ -155,13 +165,27 @@ class NewspapersPlugin extends Omeka_Plugin_AbstractPlugin
         $params = $args['params'];
         $db = get_db();
         
+        
+        $collectionsTable = $db->getTable('Collection');
+
+
+        
+        //make all sorting go by date in public
+        if (! is_admin_theme() ) {
+            //when SELECT arrives here, it's already ordered by added, so kill that
+            $select->reset($select::ORDER);
+            $collectionsTable->applySorting(
+                    $select,
+                    "Newspaper Metadata,start_year",
+                    "ASC"
+            );
+        }
+        
         if (! isset($params['advanced'])) {
             return;
         }
         
         $terms = $params['advanced'];
-        
-        
         
         $advancedIndex = 0;
         foreach ($terms as $v) {
@@ -201,7 +225,6 @@ class NewspapersPlugin extends Omeka_Plugin_AbstractPlugin
                 $select->joinLeft(array($alias => $db->ElementText), $joinCondition, array());
             }
             $select->where("{$alias}.text {$predicate}");
-
             $advancedIndex++;
         }
     }

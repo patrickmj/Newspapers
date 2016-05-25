@@ -30,27 +30,26 @@ class Newspapers_CaImport_CaImport extends Omeka_Job_AbstractJob
         
         foreach($newspapers['newspapers'] as $index => $newspaperData) {
             
-            if ( ! ( $index >= 460 && $index <= 600) ) {
+            if ( ! ( $index >= 1673 && $index <= 2000) ) {
+                //echo $index;
                 continue;
             }
             debug("Begin index $index");
             $newspaperUrl = $newspaperData['url'];
-            $deepNpData = $this->fetchData($newspaperUrl);
-            $newspaper = $this->parseNewspaperData($newspaperData, $deepNpData);
             
 
-            
             //skip the Memphis Appeal, which returns piles of no xml, and slows it all down
             if ($newspaperUrl == 'http://chroniclingamerica.loc.gov/lccn/sn83045160.json') {
                 debug('skipping Memphis Appeal');
                 continue;
             }
 
-            
+            $deepNpData = $this->fetchData($newspaperUrl);
             if (! $deepNpData) {
                 debug("skipping $newspaperUrl for no data");
                 continue;
             }
+            $newspaper = $this->parseNewspaperData($newspaperData, $deepNpData);
             $issuesData = $deepNpData['issues'];
             
             foreach($issuesData as $issueIndex=>$issueData) {
@@ -66,7 +65,10 @@ class Newspapers_CaImport_CaImport extends Omeka_Job_AbstractJob
                 }
                 try {
                     $issue = $this->parseIssueData($issueJson, $newspaper);
+                    $start = time();
                     $frontPage = $this->parseFrontPageData($issueJson, $issue, $newspaper);
+                    $end = time();
+                   // debug('front page process time: ' . $end - $start);
                 } catch(Exception $e) {
                     debug($e->getMessage());
                     debug(print_r($issueJson, true));
@@ -74,7 +76,6 @@ class Newspapers_CaImport_CaImport extends Omeka_Job_AbstractJob
             }
             debug("Done index $index");
         }
-
     }
     
     protected function fetchData($url)

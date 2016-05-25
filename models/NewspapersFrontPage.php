@@ -29,15 +29,10 @@ class NewspapersFrontPage extends Omeka_Record_AbstractRecord
     
     public function dimensionsSvg()
     {
-        $maxHeight = 53000; //based on max in db
-        $maxWidth = 44000; //based on max in db
-        $avgWidth = 21434;
-        $avgHeight = 28706;
-        
         
         $scale = 150; //first scale-down for display
-        $baseHeight = $maxHeight / $scale;
-        $baseWidth = $maxWidth / $scale;
+        $baseHeight = NEWSPAPERS_MAX_HEIGHT / $scale;
+        $baseWidth = NEWSPAPERS_MAX_WIDTH / $scale;
         
         //when I know the real max and min widths from all papers, use
         //that to normalize to the base width and height
@@ -50,8 +45,8 @@ class NewspapersFrontPage extends Omeka_Record_AbstractRecord
         
         $colWidthScale = .90 / $this->columns; //fudge the width to be a smidge smaller than 1/cols
         
-        $avgWidth  = $avgWidth / $scale; // temp @todo
-        $avgHeight = $avgHeight / $scale; // temp @todo
+        $avgWidth  = NEWSPAPERS_AVG_WIDTH / $scale; // temp @todo
+        $avgHeight = NEWSPAPERS_AVG_HEIGHT / $scale; // temp @todo
         
         
         $svg = "

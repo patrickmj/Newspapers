@@ -8,8 +8,6 @@ div.sotn-images iframe.ca-container {
     height: 300px;
 }
 
-
-
 div.newspaper-data-wrapper {
     display: block;
     width: 100% !important;
@@ -35,4 +33,31 @@ div.newspaper-data-wrapper.front-page .stats {
 div.newspaper-data-wrapper > div {
     display: inline-block;
     width: 22%;
+}
+
+div.newspaper-basic-data span {
+    font-weight: bold;
+    margin-left: 5px;
+}
+
+input[type="text"].columns-correction {
+    display: inline-block;
+}
+
+iframe.ca-container {
+    width: 70%;
+    height: 700px;
+    float: right;
+
+}
+
+.corrections-button {
+    cursor: pointer;
+    margin-left: 10px;
+    
+}
+
+.corrections-button img {
+    margin-left: 3px;
+    margin-right: 3px;
 }
