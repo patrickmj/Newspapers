@@ -17,7 +17,8 @@ class NewspapersPlugin extends Omeka_Plugin_AbstractPlugin
             'initialize',
             'public_head',
             'items_browse_sql',
-            'collections_browse_sql'
+            'collections_browse_sql',
+            'admin_collections_show_sidebar',
             );
     
     public $_filters = array(
@@ -139,14 +140,25 @@ class NewspapersPlugin extends Omeka_Plugin_AbstractPlugin
             $select->where("{$db->NewspapersFrontPage}.columns = ? ", $params['columns']);
         }
         
+        if(isset($params['width'])) {
+            $floor = $params['width'] - 500;
+            $ceil = $params['width'] + 500;
+            $select->where("{$db->NewspapersFrontPage}.page_width BETWEEN $floor AND $ceil");
+        }
+        
+        if(isset($params['height'])) {
+            $floor = $params['width'] - 500;
+            $ceil = $params['width'] + 500;
+            $select->where("{$db->NewspapersFrontPage}.page_height BETWEEN $floor AND $ceil");
+        }
+        
         if(isset($params['state'])) {
             $select->join($db->NewspapersIssues,
                 "{$db->NewspapersFrontPage}.issue_id = {$db->NewspapersIssue}.id", array());
 
             $select->join($db->NewspapersNewspaper,
                 "{$db->NewspapersNewspaper}.id = {$db->NewspapersIssue}.newspaper_id", array());
-            
-            
+
             $select->where("{$db->NewspapersNewspaper}.state = ? ", $params['state']);
         }
         
@@ -156,6 +168,21 @@ class NewspapersPlugin extends Omeka_Plugin_AbstractPlugin
                     "{$db->NewspapersFrontPage}.issue_id = {$db->NewspapersIssue}.id", array());                
             }
             $select->where("{$db->NewspapersIssue}.pages = ?", $params['pages']);
+        }
+        
+        if(isset($params['newspaper_id'])) {
+            if (! $select->hasJoin($db->NewspapersIssues)) {
+                $select->join($db->NewspapersIssues,
+                    "{$db->NewspapersFrontPage}.issue_id = {$db->NewspapersIssue}.id", array());                
+            }
+            
+            if (! $select->hasJoin($db->NnewspapersNewspaper)) {
+                $select->join($db->NewspapersNewspaper,
+                    "{$db->NewspapersNewspaper}.id = {$db->NewspapersIssue}.newspaper_id", array());
+                
+            }
+            
+            $select->where("{$db->NewspapersNewspaper}.id = ? ", $params['newspaper_id']);
         }
     }
     
@@ -209,6 +236,9 @@ class NewspapersPlugin extends Omeka_Plugin_AbstractPlugin
                 case 'is exactly':
                     $predicate = ' = ' . $db->quote($value);
                     break;
+                case 'contains':
+                    $predicate = "LIKE " . $db->quote('%'.$value .'%');
+                    break;
                 default:
                     throw new Omeka_Record_Exception(__('Invalid search type given!'));
             }
@@ -227,6 +257,18 @@ class NewspapersPlugin extends Omeka_Plugin_AbstractPlugin
             $select->where("{$alias}.text {$predicate}");
             $advancedIndex++;
         }
+    }
+    
+    public function hookAdminCollectionsShowSidebar($args)
+    {
+        $collection = $args['collection'];
+        $db = $this->_db;
+        $np = $db->getTable('NewspapersNewspaper')->findByCollection($collection->id);
+        $html  = "<div class='newspapers panel'>";
+        $html .= "<h4>Total issues</h4>";
+        $html .= "<p>" . $np->issues_count . "</p>";
+        $html .= "</div>";
+        echo $html;
     }
     
     protected function installElementSets()

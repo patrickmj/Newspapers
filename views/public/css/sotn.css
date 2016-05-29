@@ -45,7 +45,7 @@ input[type="text"].columns-correction {
 }
 
 iframe.ca-container {
-    width: 70%;
+    width: 60%;
     height: 700px;
     float: right;
 
@@ -54,10 +54,13 @@ iframe.ca-container {
 .corrections-button {
     cursor: pointer;
     margin-left: 10px;
-    
+    background-color: grey;
+    color: white;
 }
 
 .corrections-button img {
     margin-left: 3px;
     margin-right: 3px;
+    position: relative;
+    top: 4px;
 }

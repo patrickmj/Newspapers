@@ -2,6 +2,23 @@
 
 class Newspapers_CorrectionsController extends Omeka_Controller_AbstractActionController
 {
+    
+    public function init()
+    {
+        $this->_helper->db->setDefaultModelName('NewspapersColumnsCorrection');
+    }
+    
+    public function browseAction()
+    {
+        if ($this->getRequest()->isPost()) {
+            $acceptCorrectionIds = $this->getParam('accept');
+            print_r($params);
+            die();
+        } else {
+            parent::browseAction();
+        }
+    }
+    
     public function correctAction()
     {
         $db = get_db();
@@ -40,6 +57,10 @@ class Newspapers_CorrectionsController extends Omeka_Controller_AbstractActionCo
     protected function acceptCorrection($correction)
     {
         $correction->accepted_date = date(Mixin_Timestamp::DATE_FORMAT);
+        $db = get_db();
+        $frontPage = $db->getTable('NewspapersFrontPage')->find($correction->fp_id);
+        $item = $db->getTable('Item')->find($frontPage->item_id);
+        $frontPage->columns = $correction->corrected_columns;
         $correction->save();
     }
 }

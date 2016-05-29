@@ -30,7 +30,8 @@ class Newspapers_CaImport_CaImport extends Omeka_Job_AbstractJob
         
         foreach($newspapers['newspapers'] as $index => $newspaperData) {
             
-            if ( ! ( $index >= 1673 && $index <= 2000) ) {
+            //if ( ! ( $index >= 702 && $index <= 1026) ) {
+            if ( ! ( $index >= 780 && $index <= 889) ) {
                 //echo $index;
                 continue;
             }

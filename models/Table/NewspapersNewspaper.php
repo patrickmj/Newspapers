@@ -62,27 +62,15 @@ class Table_NewspapersNewspaper extends Omeka_Db_Table
                       new Zend_Db_Expr("min({$db->NewspapersFrontPage}.columns) as minColumns"),
                       new Zend_Db_Expr("max({$db->NewspapersFrontPage}.columns) as maxColumns"),
         
-                      new Zend_Db_Expr("max({$db->NewspapersFrontPage}.printspace_height) as maxPrintSpaceHeight"),
-                      new Zend_Db_Expr("min({$db->NewspapersFrontPage}.printspace_height) as minPrintSpaceHeight"),
-                      new Zend_Db_Expr("avg({$db->NewspapersFrontPage}.printspace_height) as avgPrintSpaceHeight"),
-                      new Zend_Db_Expr("std({$db->NewspapersFrontPage}.printspace_height) as stdPrintSpaceHeight"),
-                      
                       new Zend_Db_Expr("max({$db->NewspapersFrontPage}.page_height) as maxPageHeight"),
                       new Zend_Db_Expr("min({$db->NewspapersFrontPage}.page_height) as minPageHeight"),
                       new Zend_Db_Expr("avg({$db->NewspapersFrontPage}.page_height) as avgPageHeight"),
                       new Zend_Db_Expr("std({$db->NewspapersFrontPage}.page_height) as stdPageHeight"),
                       
-                      
                       new Zend_Db_Expr("max({$db->NewspapersFrontPage}.page_width) as maxPageWidth"),
                       new Zend_Db_Expr("min({$db->NewspapersFrontPage}.page_width) as minPageWidth"),
                       new Zend_Db_Expr("avg({$db->NewspapersFrontPage}.page_width) as avgPageWidth"),
                       new Zend_Db_Expr("std({$db->NewspapersFrontPage}.page_width) as stdPageWidth"),
-        
-                      new Zend_Db_Expr("max({$db->NewspapersFrontPage}.printspace_width) as maxPrintSpaceWidth"),
-                      new Zend_Db_Expr("min({$db->NewspapersFrontPage}.printspace_width) as minPrintSpaceWidth"),
-                      new Zend_Db_Expr("avg({$db->NewspapersFrontPage}.printspace_width) as avgPrintSpaceWidth"),
-                      new Zend_Db_Expr("std({$db->NewspapersFrontPage}.printspace_width) as stdPrintSpaceWidth"),
-                      
                 ));
         
         if (! empty($states)) {

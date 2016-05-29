@@ -26,6 +26,10 @@ class NewspapersFrontPage extends Omeka_Record_AbstractRecord
     
     public $pdf_url;
     
+    public function getItem()
+    {
+         return $this->_db->getTable('Item')->find($this->item_id);
+    }
     
     public function dimensionsSvg()
     {
