@@ -3,9 +3,12 @@
 define('NEWSPAPERS_PLUGIN_DIR', PLUGIN_DIR . '/Newspapers');
 
 define('NEWSPAPERS_MAX_HEIGHT', 52220);
-define('NEWSPAPERS_MAX_WIDTH', 42964);
-define('NEWSPAPERS_AVG_HEIGHT', 28538.8757 );
-define('NEWSPAPERS_AVG_WIDTH', 21072.6768 );
+define('NEWSPAPERS_MAX_WIDTH', 45024);
+define('NEWSPAPERS_MIN_HEIGHT', 4964);
+define('NEWSPAPERS_MIN_WIDTH', 3128);
+
+define('NEWSPAPERS_AVG_HEIGHT', 27721.7518 );
+define('NEWSPAPERS_AVG_WIDTH', 20269.2932 );
 
 
 class NewspapersPlugin extends Omeka_Plugin_AbstractPlugin
@@ -22,7 +25,7 @@ class NewspapersPlugin extends Omeka_Plugin_AbstractPlugin
             );
     
     public $_filters = array(
-            
+            'admin_navigation_main'
             );
     
     public function hookInitialize()
@@ -140,6 +143,15 @@ class NewspapersPlugin extends Omeka_Plugin_AbstractPlugin
             $select->where("{$db->NewspapersFrontPage}.columns = ? ", $params['columns']);
         }
         
+        if(isset($params['columns_greater_than'])) {
+            $select->where("{$db->NewspapersFrontPage}.columns = > ", $params['columns']);
+        }
+        
+        if(isset($params['columns_less_than'])) {
+            $select->where("{$db->NewspapersFrontPage}.columns = < ", $params['columns']);
+        }
+        
+        //precision is iffy, so include a range
         if(isset($params['width'])) {
             $floor = $params['width'] - 500;
             $ceil = $params['width'] + 500;
@@ -269,6 +281,13 @@ class NewspapersPlugin extends Omeka_Plugin_AbstractPlugin
         $html .= "<p>" . $np->issues_count . "</p>";
         $html .= "</div>";
         echo $html;
+    }
+    
+    public function filterAdminNavigationMain($nav)
+    {
+        $nav['Newspapers_Rerun'] = array('label' => 'Rerun Import', 'uri' => url('newspapers/import/import'));
+        $nav['Newspapers_Fixit'] = array('label' => 'Manage Corrections', 'uri' => url('newspapers/corrections/browse'));
+        return $nav;
     }
     
     protected function installElementSets()

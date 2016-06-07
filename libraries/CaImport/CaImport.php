@@ -30,11 +30,11 @@ class Newspapers_CaImport_CaImport extends Omeka_Job_AbstractJob
         
         foreach($newspapers['newspapers'] as $index => $newspaperData) {
             
-            //if ( ! ( $index >= 702 && $index <= 1026) ) {
-            if ( ! ( $index >= 780 && $index <= 889) ) {
-                //echo $index;
+         
+            if ( ! ( $index >= 1282 && $index <= 3000) ) {
                 continue;
             }
+           
             debug("Begin index $index");
             $newspaperUrl = $newspaperData['url'];
             
@@ -45,11 +45,23 @@ class Newspapers_CaImport_CaImport extends Omeka_Job_AbstractJob
                 continue;
             }
 
+            //for last round of importing, if it exists, skip over and move on @todo
+            $np = $this->newspapersTable->findByLccn($newspaperData['lccn']);
+            if (! empty($np) ) {
+                debug("skipping $newspaperUrl because already done!");
+                continue;
+            }
+            
+
             $deepNpData = $this->fetchData($newspaperUrl);
             if (! $deepNpData) {
                 debug("skipping $newspaperUrl for no data");
                 continue;
             }
+            
+            
+            
+            
             $newspaper = $this->parseNewspaperData($newspaperData, $deepNpData);
             $issuesData = $deepNpData['issues'];
             

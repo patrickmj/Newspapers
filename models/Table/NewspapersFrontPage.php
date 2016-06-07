@@ -2,6 +2,7 @@
 
 class Table_NewspapersFrontPage extends Omeka_Db_Table
 {
+    
     public function findByItemId($itemId)
     {
         $select = $this->getSelect();
@@ -26,5 +27,25 @@ class Table_NewspapersFrontPage extends Omeka_Db_Table
     {
         $count = $this->count(array('loc_uri' => $locUri));
         return $count !== 0;
+    }
+    
+    public function findOthersInNewspaper($frontPage)
+    {
+        echo $frontPage->issue_id;
+        
+        $db = $this->_db;
+        $select = $this->getSelect();
+        $select->join("{$db->NewspapersIssue}",
+                "{$db->NewspapersIssue}.id = {$frontPage->issue_id}",
+                array());
+        $select->join("{$db->NewspapersNewspaper}",
+                "{$db->NewspapersNewspaper}.id = {$db->NewspapersIssue}.newspaper_id", array());
+        
+        
+        
+        $result = $db->query($select);
+        echo $select;
+        echo count($result);
+        die();
     }
 }
