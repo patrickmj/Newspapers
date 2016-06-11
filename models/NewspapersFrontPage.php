@@ -75,13 +75,13 @@ class NewspapersFrontPage extends Omeka_Record_AbstractRecord
     ";
         if ($this->columns == 1) {
             $svg .= "
-                <use xlink:href='#column' x='2px'  transform='translate(-30) scale($colWidthScale, .95)'></use>
+                <use xlink:href='#column' x='2px' transform='translate(-30) scale($colWidthScale, .9)'></use>
             ";
         } else {
             for($col = 0; $col < $this->columns; $col++) {
-                $x = $normalizedWidth * $col;
+                $x = ($normalizedWidth * $col);
                 $svg .= "
-                <use xlink:href='#column' x='$x' transform='scale($colWidthScale, .95)'></use>
+                <use xlink:href='#column' x='$x' transform='scale($colWidthScale, .9)'></use>
                 ";
             }
         }

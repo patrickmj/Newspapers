@@ -144,11 +144,11 @@ class NewspapersPlugin extends Omeka_Plugin_AbstractPlugin
         }
         
         if(isset($params['columns_greater_than'])) {
-            $select->where("{$db->NewspapersFrontPage}.columns = > ", $params['columns']);
+            $select->where("{$db->NewspapersFrontPage}.columns > ", $params['columns']);
         }
         
         if(isset($params['columns_less_than'])) {
-            $select->where("{$db->NewspapersFrontPage}.columns = < ", $params['columns']);
+            $select->where("{$db->NewspapersFrontPage}.columns < ", $params['columns']);
         }
         
         //precision is iffy, so include a range
