@@ -7,8 +7,8 @@ define('NEWSPAPERS_MAX_WIDTH', 45024);
 define('NEWSPAPERS_MIN_HEIGHT', 4964);
 define('NEWSPAPERS_MIN_WIDTH', 3128);
 
-define('NEWSPAPERS_AVG_HEIGHT', 27721.7518 );
-define('NEWSPAPERS_AVG_WIDTH', 20269.2932 );
+define('NEWSPAPERS_AVG_HEIGHT', 27927.8056 );
+define('NEWSPAPERS_AVG_WIDTH', 20439.5667 );
 
 
 class NewspapersPlugin extends Omeka_Plugin_AbstractPlugin
@@ -188,7 +188,7 @@ class NewspapersPlugin extends Omeka_Plugin_AbstractPlugin
                     "{$db->NewspapersFrontPage}.issue_id = {$db->NewspapersIssue}.id", array());                
             }
             
-            if (! $select->hasJoin($db->NnewspapersNewspaper)) {
+            if (! $select->hasJoin($db->NewspapersNewspaper)) {
                 $select->join($db->NewspapersNewspaper,
                     "{$db->NewspapersNewspaper}.id = {$db->NewspapersIssue}.newspaper_id", array());
                 
@@ -208,7 +208,6 @@ class NewspapersPlugin extends Omeka_Plugin_AbstractPlugin
         $collectionsTable = $db->getTable('Collection');
 
 
-        
         //make all sorting go by date in public
         if (! is_admin_theme() ) {
             //when SELECT arrives here, it's already ordered by added, so kill that
@@ -219,12 +218,28 @@ class NewspapersPlugin extends Omeka_Plugin_AbstractPlugin
                     "ASC"
             );
         }
+
+        $select->join($db->NewspapersNewspaper,
+            "{$db->NewspapersNewspaper}.collection_id = collections.id", array());
+            
         
-        if (! isset($params['advanced'])) {
-            return;
+        if ( isset($params['states'])) {
+            $states = $params['states'];
+            //$states = explode(',', $states);
+        }
+
+        if (! empty($states)) {
+            $select->where("{$db->NewspapersNewspaper}.state IN (?)", $states);
+        }
+//echo $select;
+//die();
+
+        if (isset($params['advanced'])) {
+            $terms = $params['advanced'];
+        } else {
+            $terms = array();
         }
         
-        $terms = $params['advanced'];
         
         $advancedIndex = 0;
         foreach ($terms as $v) {

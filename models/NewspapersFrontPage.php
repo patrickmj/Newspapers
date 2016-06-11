@@ -47,7 +47,11 @@ class NewspapersFrontPage extends Omeka_Record_AbstractRecord
         $colElWidth = $normalizedWidth - 2;
         $colElHeight = $normalizedHeight - 2;
         
-        $colWidthScale = .90 / $this->columns; //fudge the width to be a smidge smaller than 1/cols
+        if ($this->columns == 0) {
+            $colWidthScale = .90;
+        } else {
+            $colWidthScale = .90 / $this->columns; //fudge the width to be a smidge smaller than 1/cols
+        }
         
         $avgWidth  = NEWSPAPERS_AVG_WIDTH / $scale; // temp @todo
         $avgHeight = NEWSPAPERS_AVG_HEIGHT / $scale; // temp @todo
@@ -69,18 +73,36 @@ class NewspapersFrontPage extends Omeka_Record_AbstractRecord
     
     
     ";
-        
-        for($col = 0; $col < $this->columns; $col++) {
-            $x = $normalizedWidth * $col;
+        if ($this->columns == 1) {
             $svg .= "
-            <use xlink:href='#column' x='$x' transform='scale($colWidthScale, .95)'></use>
+                <use xlink:href='#column' x='2px'  transform='translate(-30) scale($colWidthScale, .95)'></use>
             ";
+        } else {
+            for($col = 0; $col < $this->columns; $col++) {
+                $x = $normalizedWidth * $col;
+                $svg .= "
+                <use xlink:href='#column' x='$x' transform='scale($colWidthScale, .95)'></use>
+                ";
+            }
         }
+
         
         
         
         $svg .= "</svg>";
         
         return $svg;
+    }
+    
+    public function getHeight()
+    {
+        $inches = round($this->page_height / 1200, 2);
+        return $inches . '"';
+    }
+    
+    public function getWidth()
+    {
+        $inches = round($this->page_width / 1200, 2);
+        return $inches . '"';
     }
 }
