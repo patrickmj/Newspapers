@@ -310,7 +310,8 @@ class NewspapersPlugin extends Omeka_Plugin_AbstractPlugin
             $page = 0;
             while(count($frontPages != 0)) {
                 debug('upgrade page ' . $page);
-                $frontPages = $fpTable->findBy(array(), 10000, $page);
+                $params = array('date' => '0000-00-00');
+                $frontPages = $fpTable->findBy($params, 10000, $page);
                 
                 foreach ($frontPages as $frontPage) {
                     if ($frontPage->date == '0000-00-00') {
