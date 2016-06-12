@@ -23,6 +23,7 @@ class Table_NewspapersNewspaper extends Omeka_Db_Table
         return $count !== 0;
     }
     
+    
     /**
      * 
      * @param unknown_type $params
@@ -33,17 +34,6 @@ class Table_NewspapersNewspaper extends Omeka_Db_Table
     
     public function getStats($params = array())
     {
-        $newspaperIds = array();
-        $states = array();
-        
-        if ( isset($params['newspaperIds']) && is_array($params['newspaperIds'])) {
-            $newspaperIds = $params['newspaperIds'];
-        }
-        
-        
-        if ( isset($params['states']) && is_array($params['states'])) {
-            $states = $params['states'];
-        }
         
         $select = new Omeka_Db_Select($this->getDb()->getAdapter());
         
@@ -73,12 +63,37 @@ class Table_NewspapersNewspaper extends Omeka_Db_Table
                       new Zend_Db_Expr("std({$db->NewspapersFrontPage}.page_width) as stdPageWidth"),
                 ));
         
-        if (! empty($states)) {
-            $select->where("{$db->NewspapersNewspaper}.state IN (?)", $states);
+        if (isset($params['states'])) {
+            $select->where("{$db->NewspapersNewspaper}.state IN (?)", $params['states']);
         }
         
-        if (! empty($newspaperIds)) {
-            $select->where("{$db->NewspapersNewspaper}.id IN (?)", $newspaperIds);
+        if (isset($params['newspaperIds'])) {
+            $select->where("{$db->NewspapersNewspaper}.id IN (?)", $params['newspaperIds']);
+        }
+        
+        if (isset($params['columns'])) {
+            $select->where("{$db->NewspapersFrontPage}.columns = ?", $params['columns']);
+        }
+        
+        if(isset($params['columns_greater_than'])) {
+            $select->where("{$db->NewspapersFrontPage}.columns > ", $params['columns']);
+        }
+        
+        if(isset($params['columns_less_than'])) {
+            $select->where("{$db->NewspapersFrontPage}.columns < ", $params['columns']);
+        }
+        
+            //precision is iffy, so include a range
+        if(isset($params['width'])) {
+            $floor = $params['width'] - 500;
+            $ceil = $params['width'] + 500;
+            $select->where("{$db->NewspapersFrontPage}.page_width BETWEEN $floor AND $ceil");
+        }
+        
+        if(isset($params['height'])) {
+            $floor = $params['height'] - 500;
+            $ceil = $params['height'] + 500;
+            $select->where("{$db->NewspapersFrontPage}.page_height BETWEEN $floor AND $ceil");
         }
         
         $result = $this->_db->fetchAll($select);

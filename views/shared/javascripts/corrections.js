@@ -1,6 +1,6 @@
 (function ($) {
     
-    var correctUrl = "http://localhost/ChroniclingAmerica/admin/newspapers/corrections/correct";
+    var correctUrl = "http://shapeofthenews.org/admin/newspapers/corrections/correct";
     
     $(document).ready(function() {
         $('.corrections-button').on('click', function(e) {

@@ -2,6 +2,9 @@
 
 class NewspapersFrontPage extends Omeka_Record_AbstractRecord
 {
+    
+    public $date;
+    
     public $item_id;
     
     public $issue_id;
@@ -67,9 +70,9 @@ class NewspapersFrontPage extends Omeka_Record_AbstractRecord
     
     
     <rect id='background' width='$baseWidth' height='$baseHeight' color='white' fill='white' stroke='black'></rect>
-    <rect id='average-dimensions' width='$avgWidth' height='$avgHeight' stroke='red' stroke-width='5'></rect>
+    <rect id='average-dimensions' width='$avgWidth' height='$avgHeight' stroke='grey' stroke-linecap='miter' stroke-dasharray='2' stroke-width='5'></rect>
     <rect id='front-page' x='5' y='5' width='$normalizedWidth' height='$normalizedHeight' stroke='black'></rect>
-    
+    <text x='$avgWidth' y='$avgHeight' transform='rotate(45, $avgWidth, $avgHeight)' stroke='grey'>Average</text>
     
     
     ";

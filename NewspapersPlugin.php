@@ -22,6 +22,7 @@ class NewspapersPlugin extends Omeka_Plugin_AbstractPlugin
             'items_browse_sql',
             'collections_browse_sql',
             'admin_collections_show_sidebar',
+            'upgrade',
             );
     
     public $_filters = array(
@@ -159,8 +160,8 @@ class NewspapersPlugin extends Omeka_Plugin_AbstractPlugin
         }
         
         if(isset($params['height'])) {
-            $floor = $params['width'] - 500;
-            $ceil = $params['width'] + 500;
+            $floor = $params['height'] - 500;
+            $ceil = $params['height'] + 500;
             $select->where("{$db->NewspapersFrontPage}.page_height BETWEEN $floor AND $ceil");
         }
         
@@ -225,14 +226,11 @@ class NewspapersPlugin extends Omeka_Plugin_AbstractPlugin
         
         if ( isset($params['states'])) {
             $states = $params['states'];
-            //$states = explode(',', $states);
         }
 
         if (! empty($states)) {
             $select->where("{$db->NewspapersNewspaper}.state IN (?)", $states);
         }
-//echo $select;
-//die();
 
         if (isset($params['advanced'])) {
             $terms = $params['advanced'];
@@ -303,6 +301,25 @@ class NewspapersPlugin extends Omeka_Plugin_AbstractPlugin
         $nav['Newspapers_Rerun'] = array('label' => 'Rerun Import', 'uri' => url('newspapers/import/import'));
         $nav['Newspapers_Fixit'] = array('label' => 'Manage Corrections', 'uri' => url('newspapers/corrections/browse'));
         return $nav;
+    }
+    
+    public function hookUpgrade($args)
+    {
+        if ($args['old_version'] == '0.1') {
+            $fpTable = $this->_db->getTable('NewspapersFrontPage');
+            $page = 0;
+            while(count($frontPages != 0)) {
+                debug('upgrade page ' . $page);
+                $frontPages = $fpTable->findBy(array(), 10000, $page);
+                foreach ($frontPages as $frontPage) {
+                    $item = $fpTable->findItemByFrontPage($frontPage);
+                    $date = metadata($item, array('Dublin Core', 'Date'), array('no_filter' => true));
+                    $frontPage->date = $date;
+                    $frontPage->save();
+                }
+                $page++;
+            }
+        }
     }
     
     protected function installElementSets()
