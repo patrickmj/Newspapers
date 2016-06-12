@@ -311,7 +311,11 @@ class NewspapersPlugin extends Omeka_Plugin_AbstractPlugin
             while(count($frontPages != 0)) {
                 debug('upgrade page ' . $page);
                 $frontPages = $fpTable->findBy(array(), 10000, $page);
+                
                 foreach ($frontPages as $frontPage) {
+                    if ($frontPage->date == '0000-00-00') {
+                        continue;
+                    }
                     $item = $fpTable->findItemByFrontPage($frontPage);
                     $date = metadata($item, array('Dublin Core', 'Date'), array('no_filter' => true));
                     $frontPage->date = $date;
