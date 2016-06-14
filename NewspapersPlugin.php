@@ -145,7 +145,7 @@ class NewspapersPlugin extends Omeka_Plugin_AbstractPlugin
         
         
         if(!empty($params['fp_date'])) {
-            $select->where("{$db->NewspapersFrontPage}.date = ? ", $params['fp_date']);
+            $select->where("{$db->NewspapersFrontPage}.date LIKE ? ", '%' . $params['fp_date'] . '%');
         }
         
         if(!empty($params['fp_date_before'])) {
