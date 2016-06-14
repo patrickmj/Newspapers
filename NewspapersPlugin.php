@@ -137,45 +137,63 @@ class NewspapersPlugin extends Omeka_Plugin_AbstractPlugin
         
         $db = $this->_db;
 
+        
+        $select->reset($select::ORDER);
+        
         $select->join($db->NewspapersFrontPage,
             "{$db->NewspapersFrontPage}.item_id = items.id", array());
         
-        if(isset($params['columns'])) {
+        
+        if(!empty($params['fp_date'])) {
+            $select->where("{$db->NewspapersFrontPage}.date = ? ", $params['fp_date']);
+        }
+        
+        if(!empty($params['fp_date_before'])) {
+            $select->where("{$db->NewspapersFrontPage}.date < ? ", $params['fp_date_before']);
+        }
+        
+        if(!empty($params['fp_date_after'])) {
+            $select->where("{$db->NewspapersFrontPage}.date > ? ", $params['fp_date_after']);
+        }
+        
+        if(!empty($params['columns'])) {
             $select->where("{$db->NewspapersFrontPage}.columns = ? ", $params['columns']);
         }
         
-        if(isset($params['columns_greater_than'])) {
-            $select->where("{$db->NewspapersFrontPage}.columns > ", $params['columns']);
+        if(!empty($params['columns_greater_than'])) {
+            $select->where("{$db->NewspapersFrontPage}.columns > ?", $params['columns_greater_than']);
         }
         
-        if(isset($params['columns_less_than'])) {
-            $select->where("{$db->NewspapersFrontPage}.columns < ", $params['columns']);
+        if(!empty($params['columns_less_than'])) {
+            $select->where("{$db->NewspapersFrontPage}.columns < ?", $params['columns_less_than']);
         }
-        
         //precision is iffy, so include a range
-        if(isset($params['width'])) {
-            $floor = $params['width'] - 500;
-            $ceil = $params['width'] + 500;
+        if(!empty($params['width'])) {
+            $rawWidth = $params['width'] * 1200;
+            $floor = $rawWidth - 500;
+            $ceil = $rawWidth + 500;
             $select->where("{$db->NewspapersFrontPage}.page_width BETWEEN $floor AND $ceil");
         }
         
-        if(isset($params['height'])) {
-            $floor = $params['height'] - 500;
-            $ceil = $params['height'] + 500;
+        if(!empty($params['height'])) {
+            $rawHeight = $params['height'] * 1200;
+            $floor = $rawHeight - 500;
+            $ceil = $rawHeight + 500;
             $select->where("{$db->NewspapersFrontPage}.page_height BETWEEN $floor AND $ceil");
         }
         
-        if(isset($params['state'])) {
+        if(!empty($params['states'])) {
+            $states = $params['states'];
             $select->join($db->NewspapersIssues,
                 "{$db->NewspapersFrontPage}.issue_id = {$db->NewspapersIssue}.id", array());
 
             $select->join($db->NewspapersNewspaper,
                 "{$db->NewspapersNewspaper}.id = {$db->NewspapersIssue}.newspaper_id", array());
 
-            $select->where("{$db->NewspapersNewspaper}.state = ? ", $params['state']);
+            $select->where("{$db->NewspapersNewspaper}.state IN (?)", $states);
         }
         
-        if(isset($params['pages'])) {
+        if(!empty($params['pages'])) {
             if (! $select->hasJoin($db->NewspapersIssues)) {
                 $select->join($db->NewspapersIssues,
                     "{$db->NewspapersFrontPage}.issue_id = {$db->NewspapersIssue}.id", array());                
@@ -183,7 +201,7 @@ class NewspapersPlugin extends Omeka_Plugin_AbstractPlugin
             $select->where("{$db->NewspapersIssue}.pages = ?", $params['pages']);
         }
         
-        if(isset($params['newspaper_id'])) {
+        if(!empty($params['newspaper_id'])) {
             if (! $select->hasJoin($db->NewspapersIssues)) {
                 $select->join($db->NewspapersIssues,
                     "{$db->NewspapersFrontPage}.issue_id = {$db->NewspapersIssue}.id", array());                
@@ -192,11 +210,12 @@ class NewspapersPlugin extends Omeka_Plugin_AbstractPlugin
             if (! $select->hasJoin($db->NewspapersNewspaper)) {
                 $select->join($db->NewspapersNewspaper,
                     "{$db->NewspapersNewspaper}.id = {$db->NewspapersIssue}.newspaper_id", array());
-                
             }
             
             $select->where("{$db->NewspapersNewspaper}.id = ? ", $params['newspaper_id']);
         }
+       // echo $select;
+       // die();
     }
     
     public function hookCollectionsBrowseSql($args)
@@ -308,7 +327,8 @@ class NewspapersPlugin extends Omeka_Plugin_AbstractPlugin
         if ($args['old_version'] == '0.1') {
             $fpTable = $this->_db->getTable('NewspapersFrontPage');
             $page = 0;
-            while(count($frontPages != 0)) {
+            while(false) {
+            //while(count($frontPages != 0)) {
                 debug('upgrade page ' . $page);
                 $params = array('date' => '0000-00-00');
                 $frontPages = $fpTable->findBy($params, 10000, $page);
