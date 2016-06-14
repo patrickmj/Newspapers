@@ -214,8 +214,6 @@ class NewspapersPlugin extends Omeka_Plugin_AbstractPlugin
             
             $select->where("{$db->NewspapersNewspaper}.id = ? ", $params['newspaper_id']);
         }
-       // echo $select;
-       // die();
     }
     
     public function hookCollectionsBrowseSql($args)

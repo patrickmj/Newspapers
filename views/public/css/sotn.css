@@ -64,3 +64,16 @@ iframe.ca-container {
     position: relative;
     top: 4px;
 }
+
+div.exact-before-after div.field {
+    display: inline-block;
+}
+
+.states br {
+    display: none;
+}
+
+.states label {
+    display: inline-block;
+    width: 20%;
+}
