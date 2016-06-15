@@ -182,6 +182,30 @@ class NewspapersPlugin extends Omeka_Plugin_AbstractPlugin
             $select->where("{$db->NewspapersFrontPage}.page_height BETWEEN $floor AND $ceil");
         }
         
+        if(!empty($params['height_less_than'])) {
+            $rawHeight = $params['height_less_than'] * 1200;
+            $select->where("{$db->NewspapersFrontPage}.page_height < ?", $rawHeight);
+            $select->order("{$db->NewspapersFrontPage}.page_height");
+        }
+        
+        if(!empty($params['height_greater_than'])) {
+            $rawHeight = $params['height_greater_than'] * 1200;
+            $select->where("{$db->NewspapersFrontPage}.page_height > ?", $rawHeight);
+            $select->order("{$db->NewspapersFrontPage}.page_height");
+        }
+        
+        if(!empty($params['width_less_than'])) {
+            $rawWidth = $params['width_less_than'] * 1200;
+            $select->where("{$db->NewspapersFrontPage}.page_width < ?", $rawWidth);
+            $select->order("{$db->NewspapersFrontPage}.page_width");
+        }
+        
+        if(!empty($params['width_greater_than'])) {
+            $rawWidth = $params['width_greater_than'] * 1200;
+            $select->where("{$db->NewspapersFrontPage}.page_width > ?", $rawWidth);
+            $select->order("{$db->NewspapersFrontPage}.page_width");
+        }
+        
         if(!empty($params['states'])) {
             $states = $params['states'];
             $select->join($db->NewspapersIssues,
